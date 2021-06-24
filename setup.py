@@ -61,7 +61,7 @@ setuptools.setup(
             "optuna==2.3.0"
         ],
         "ray": [
-            "ray[tune]==1.4.0",
+            "ray[tune]==1.2.0",
             "pyyaml<5.3.1",
         ],
         "azureml": [
