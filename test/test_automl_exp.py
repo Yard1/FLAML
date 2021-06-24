@@ -65,7 +65,7 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
                              total_budget=time_budget_s)
 
     # specify how many total concurrent trials are allowed
-    ray.init(num_cpus=n_total_pu, num_gpus=0) #n_total_pu
+    ray.init(address="auto") #n_total_pu
     if isinstance(init_config, list):
         points_to_evaluate = init_config
     else:
