@@ -16,7 +16,7 @@ except ImportError:
     from .suggestion import Searcher
     from .suggestion import OptunaSearch as GlobalSearch
     from .variant_generator import generate_variants
-from .search_thread import SearchThread
+from .search_thread import SearchThread, SearchThreadNoDiscount
 from .flow2 import FLOW2 as LocalSearch
 
 import logging
@@ -30,6 +30,7 @@ class BlendSearch(Searcher):
     cost_attr = "time_total_s"  # cost attribute in result
     lagrange = '_lagrange'      # suffix for lagrange-modified metric
     penalty = 1e+10             # penalty term for constraints
+    search_thread_class = SearchThread
 
     def __init__(self,
                  metric: Optional[str] = None,
@@ -158,7 +159,7 @@ class BlendSearch(Searcher):
             time_budget_s = config['time_budget_s']
             if time_budget_s is not None:
                 self._deadline = time_budget_s + time.time()
-                SearchThread.set_eps(time_budget_s)
+                self.search_thread_class.set_eps(time_budget_s)
         if 'metric_target' in config:
             self._metric_target = config.get('metric_target')
         return True
@@ -169,7 +170,7 @@ class BlendSearch(Searcher):
         self._metric_target = np.inf * self._ls.metric_op
         self._search_thread_pool = {
             # id: int -> thread: SearchThread
-            0: SearchThread(self._ls.mode, self._gs)
+            0: self.search_thread_class(self._ls.mode, self._gs)
         }
         self._thread_count = 1  # total # threads created
         self._init_used = self._ls.init_config is None
@@ -274,7 +275,7 @@ class BlendSearch(Searcher):
                 if not thread_id and metric_constraint_satisfied \
                         and self._create_condition(result):
                     # thread creator
-                    self._search_thread_pool[self._thread_count] = SearchThread(
+                    self._search_thread_pool[self._thread_count] = self.search_thread_class(
                         self._ls.mode,
                         self._ls.create(
                             config, objective, cost=result[self.cost_attr])
@@ -715,3 +716,7 @@ def create_next(client):
         config2trialid[config] = trial_id
         client.launch_trial(config)
     client.update_state({'algo': algo, 'config2trialid': config2trialid})
+
+
+class BlendSearchNoDiscount(BlendSearch):
+    search_thread_class = SearchThreadNoDiscount

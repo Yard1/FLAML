@@ -265,6 +265,18 @@ def run(training_function,
             reduction_factor=reduction_factor,
             config_constraints=config_constraints,
             metric_constraints=metric_constraints)
+    elif search_alg == "nodiscount":
+        from ..searcher.blendsearch import BlendSearchNoDiscount
+        search_alg = BlendSearchNoDiscount(
+            metric=metric, mode=mode, space=config,
+            points_to_evaluate=points_to_evaluate,
+            low_cost_partial_config=low_cost_partial_config,
+            cat_hp_cost=cat_hp_cost,
+            prune_attr=prune_attr,
+            min_resource=min_resource, max_resource=max_resource,
+            reduction_factor=reduction_factor,
+            config_constraints=config_constraints,
+            metric_constraints=metric_constraints)
     if time_budget_s:
         search_alg.set_search_properties(metric, mode, config={
             'time_budget_s': time_budget_s})

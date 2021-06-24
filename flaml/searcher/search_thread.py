@@ -148,3 +148,13 @@ class SearchThread:
         ''' whether the thread can suggest new configs
         '''
         return self._search_alg.can_suggest
+
+class SearchThreadNoDiscount(SearchThread):
+    def _update_speed(self):
+        # calculate speed; use 0 for invalid speed temporarily
+        if self.obj_best2 > self.obj_best1:
+            # discount the speed if there are unfinished trials
+            self.speed = (self.obj_best2 - self.obj_best1) / (
+                max(self.cost_total - self.cost_best2, SearchThread._eps))
+        else:
+            self.speed = 0

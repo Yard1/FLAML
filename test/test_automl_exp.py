@@ -21,7 +21,7 @@ RANDOMSEED = 1024
 try:
     import ray
     import flaml
-    from flaml import BlendSearch
+    from flaml import BlendSearch, BlendSearchNoDiscount
 except ImportError:
     print("pip install flaml[blendsearch,ray,openml]")
 logger = logging.getLogger(__name__)
@@ -74,6 +74,10 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
     if 'BlendSearch' in method and config_BS_in_flaml:
         # the default search_alg is BlendSearch in flaml, which use Optuna as the global search learner
         # corresponding schedulers for BS are specified in flaml.tune.run
+        if method == "BlendSearchNoDiscount":
+            search_alg = "nodiscount"
+        else:
+            search_alg = None
         analysis = tune.run(
             trainable_func,
             points_to_evaluate=points_to_evaluate,
@@ -88,6 +92,7 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
             resources_per_trial=resources_per_trial,
             config=search_space,
             local_dir=log_dir_address,
+            search_alg=search_alg,
             num_samples=-1,
             time_budget_s=time_budget_s,
             use_ray=True)

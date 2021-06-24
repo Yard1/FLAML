@@ -1,4 +1,4 @@
-from flaml.searcher import CFO, BlendSearch, FLOW2, BlendSearchTuner
+from flaml.searcher import CFO, BlendSearch, FLOW2, BlendSearchTuner, BlendSearchNoDiscount
 from flaml.automl import AutoML, logger_formatter
 try:
     from flaml.onlineml.autovw import AutoVW
