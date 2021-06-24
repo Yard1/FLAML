@@ -225,8 +225,8 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import argparse
-    from test.visualization import get_agg_lc_from_file, plot_lc
-    from test.problems.aml_problem import AutoMLProblem
+    from flaml.visualization import get_agg_lc_from_file, plot_lc
+    from flaml.problems.aml_problem import AutoMLProblem
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--time', metavar='time', type=float, default=60, help="time_budget")
     parser.add_argument('-total_pu', '--n_total_pu', metavar='n_total_pu', type=int, default=26,
