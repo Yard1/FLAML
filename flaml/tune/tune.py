@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See LICENSE file in the
  * project root for license information.
 '''
+from ray.tune.suggest import ConcurrencyLimiter
 from typing import Optional, Union, List, Callable, Tuple
 import numpy as np
 import datetime
@@ -277,6 +278,7 @@ def run(training_function,
             reduction_factor=reduction_factor,
             config_constraints=config_constraints,
             metric_constraints=metric_constraints)
+    search_alg = ConcurrencyLimiter(search_alg, max_concurrent=64)
     if time_budget_s:
         search_alg.set_search_properties(metric, mode, config={
             'time_budget_s': time_budget_s})

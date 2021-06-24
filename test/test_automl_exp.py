@@ -1941,145 +1941,30 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
     else:
         points_to_evaluate = [init_config]
 
-    if 'BlendSearch' in method and config_BS_in_flaml:
-        # the default search_alg is BlendSearch in flaml, which use Optuna as the global search learner
-        # corresponding schedulers for BS are specified in flaml.tune.run
-        if method == "BlendSearchNoDiscount":
-            search_alg = "nodiscount"
-        else:
-            search_alg = None
-        analysis = tune.run(
-            trainable_func,
-            points_to_evaluate=points_to_evaluate,
-            low_cost_partial_config=low_cost_partial_config,
-            cat_hp_cost=cat_hp_cost,
-            metric=metric,
-            mode=mode,
-            prune_attr=prune_attr,
-            max_resource=max_resource,
-            min_resource=min_resource,
-            report_intermediate_result=report_intermediate_result,
-            resources_per_trial=resources_per_trial,
-            config=search_space,
-            local_dir=log_dir_address,
-            search_alg=search_alg,
-            num_samples=-1,
-            time_budget_s=time_budget_s,
-            use_ray=True)
+    # the default search_alg is BlendSearch in flaml, which use Optuna as the global search learner
+    # corresponding schedulers for BS are specified in flaml.tune.run
+    if method == "BlendSearchNoDiscount":
+        search_alg = "nodiscount"
     else:
-        from ray.tune.suggest import BasicVariantGenerator
-        scheduler = algo = None
-        if 'Optuna' in method:
-            from ray.tune.suggest.optuna import OptunaSearch
-            import optuna
-            sampler = optuna.samplers.TPESampler(seed=RANDOMSEED+int(run_index))
-            algo = OptunaSearch(
-                points_to_evaluate=points_to_evaluate, 
-                sampler=sampler,
-                space=search_space, mode=mode, metric=metric)
-        elif 'CFO' in method:
-            from flaml import CFO
-            algo = CFO(
-                metric=metric,
-                mode=mode,
-                space=search_space,
-                points_to_evaluate=points_to_evaluate, 
-                low_cost_partial_config=low_cost_partial_config,
-                cat_hp_cost=cat_hp_cost,
-                seed=ls_seed,
-                )
-        elif 'Dragonfly' in method:
-            # pip install dragonfly-opt
-            # doesn't support categorical
-            from ray.tune.suggest.dragonfly import DragonflySearch
-            algo = DragonflySearch(
-                points_to_evaluate=points_to_evaluate, 
-                space=search_space, mode=mode, metric=metric)
-        elif 'SkOpt' == method:
-            # pip install scikit-optimize
-            # TypeError: '<' not supported between instances of 'Version' and 'tuple'
-            from ray.tune.suggest.skopt import SkOptSearch
-            algo = SkOptSearch(
-                points_to_evaluate=points_to_evaluate, 
-                space=search_space, mode=mode, metric=metric)
-        elif 'Nevergrad' == method:
-            # pip install nevergrad
-            from ray.tune.suggest.nevergrad import NevergradSearch
-            import nevergrad as ng
-            algo = NevergradSearch(
-                points_to_evaluate=points_to_evaluate, 
-                space=search_space, mode=mode, metric=metric,
-                optimizer=ng.optimizers.OnePlusOne)
-        elif 'ZOOpt' == method:
-            # pip install -U zoopt
-            # ValueError: ZOOpt does not support parameters of type `Float` with samplers of type `Quantized`
-            from ray.tune.suggest.zoopt import ZOOptSearch
-            algo = ZOOptSearch(
-                points_to_evaluate=points_to_evaluate, 
-                dim_dict=search_space, mode=mode, metric=metric,
-             budget=1000000)
-        elif 'Ax' == method:
-            # pip install ax-platform sqlalchemy
-            from ray.tune.suggest.ax import AxSearch
-            algo = AxSearch(
-                points_to_evaluate=points_to_evaluate, 
-                space=search_space, mode=mode, metric=metric)
-        elif 'HyperOpt' in method:
-            # pip install -U hyperopt
-            from ray.tune.suggest.hyperopt import HyperOptSearch
-            algo = HyperOptSearch(
-                points_to_evaluate=points_to_evaluate,
-                space=search_space, mode=mode, metric=metric,
-                random_state_seed=RANDOMSEED + int(run_index))           
-
-        if 'BlendSearch' in method:
-            from flaml import BlendSearch
-            print('low_cost_partial_config BS', low_cost_partial_config)
-            algo = BlendSearch(
-                points_to_evaluate=points_to_evaluate, 
-                low_cost_partial_config=low_cost_partial_config,
-                cat_hp_cost=cat_hp_cost,
-                global_search_alg=algo,
-                space=search_space, mode=mode, metric=metric, 
-                seed=ls_seed,
-                )
-        if 'ASHA' in method:
-            from ray.tune.schedulers import ASHAScheduler
-            scheduler = ASHAScheduler(time_attr=prune_attr,
-                                      max_t=max_resource,
-                                      grace_period=min_resource,
-                                      reduction_factor=reduction_factor_asha,
-                                      )
-            if 'ASHA' == method:
-                algo = BasicVariantGenerator(points_to_evaluate=points_to_evaluate)
-                scheduler = ASHAScheduler(time_attr=prune_attr,
-                                          max_t=max_resource,
-                                          grace_period=min_resource,
-                                          reduction_factor=reduction_factor_asha,
-                                          mode=mode, metric=metric
-                                          )
-                mode = None
-                metric = None
-
-        if 'BOHB' == method:
-            from ray.tune.schedulers import HyperBandForBOHB
-            from ray.tune.suggest.bohb import TuneBOHB
-            algo = TuneBOHB() # points_to_evaluate=[init_config] 
-            scheduler = HyperBandForBOHB(
-                time_attr=prune_attr,
-                max_t=max_resource,
-                reduction_factor=reduction_factor_hyperband,
-                )
-
-        analysis = tune.run(trainable_func,
-                            resources_per_trial=resources_per_trial,
-                            config=search_space,
-                            local_dir=log_dir_address,
-                            num_samples=-1,
-                            time_budget_s=time_budget_s,
-                            verbose=1,
-                            search_alg=algo
-                            )
+        search_alg = None
+    analysis = tune.run(
+        trainable_func,
+        points_to_evaluate=points_to_evaluate,
+        low_cost_partial_config=low_cost_partial_config,
+        cat_hp_cost=cat_hp_cost,
+        metric=metric,
+        mode=mode,
+        prune_attr=prune_attr,
+        max_resource=max_resource,
+        min_resource=min_resource,
+        report_intermediate_result=report_intermediate_result,
+        resources_per_trial=resources_per_trial,
+        config=search_space,
+        local_dir=log_dir_address,
+        search_alg=search_alg,
+        num_samples=-1,
+        time_budget_s=time_budget_s,
+        use_ray=True)
 
     metric = 'loss'
     mode = 'min'
