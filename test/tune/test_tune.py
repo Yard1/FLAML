@@ -1,19 +1,21 @@
 '''Require: pip install flaml[test,ray]
 '''
-import unittest
 import time
+import os
 from sklearn.model_selection import train_test_split
 import sklearn.metrics
 import sklearn.datasets
 try:
     from ray.tune.integration.xgboost import TuneReportCheckpointCallback
 except ImportError:
-    print("skip test_tune because ray tune cannot be imported.")
+    print("skip test_xgboost because ray tune cannot be imported.")
 import xgboost as xgb
 
 import logging
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.FileHandler('test/tune_xgboost.log'))
+os.makedirs('logs', exist_ok=True)
+logger.addHandler(logging.FileHandler('logs/tune_xgboost.log'))
+logger.setLevel(logging.INFO)
 
 
 def train_breast_cancer(config: dict):
@@ -57,16 +59,17 @@ def _test_xgboost(method='BlendSearch'):
     }
     max_iter = 10
     for num_samples in [128]:
-        time_budget_s = 60 #None
+        time_budget_s = 60
         for n_cpu in [8]:
             start_time = time.time()
             ray.init(num_cpus=n_cpu, num_gpus=0)
+            # ray.init(address='auto')
             if method == 'BlendSearch':
                 analysis = tune.run(
                     train_breast_cancer,
-                    init_config={
+                    config=search_space,
+                    low_cost_partial_config={
                         "max_depth": 1,
-                        "min_child_weight": 3,
                     },
                     cat_hp_cost={
                         "min_child_weight": [6, 3, 2],
@@ -78,9 +81,8 @@ def _test_xgboost(method='BlendSearch'):
                     report_intermediate_result=True,
                     # You can add "gpu": 0.1 to allocate GPUs
                     resources_per_trial={"cpu": 1},
-                    config=search_space,
                     local_dir='logs/',
-                    num_samples=num_samples*n_cpu,
+                    num_samples=num_samples * n_cpu,
                     time_budget_s=time_budget_s,
                     use_ray=True)
             else:
@@ -96,10 +98,9 @@ def _test_xgboost(method='BlendSearch'):
                     algo = OptunaSearch()
                 elif 'CFO' == method:
                     from flaml import CFO
-                    algo = CFO(points_to_evaluate=[{
+                    algo = CFO(low_cost_partial_config={
                         "max_depth": 1,
-                        "min_child_weight": 3,
-                    }], cat_hp_cost={
+                    }, cat_hp_cost={
                         "min_child_weight": [6, 3, 2],
                     })
                 elif 'Dragonfly' == method:
@@ -114,7 +115,7 @@ def _test_xgboost(method='BlendSearch'):
                     algo = NevergradSearch(optimizer=ng.optimizers.OnePlusOne)
                 elif 'ZOOpt' == method:
                     from ray.tune.suggest.zoopt import ZOOptSearch
-                    algo = ZOOptSearch(budget=num_samples*n_cpu)
+                    algo = ZOOptSearch(budget=num_samples * n_cpu)
                 elif 'Ax' == method:
                     from ray.tune.suggest.ax import AxSearch
                     algo = AxSearch()
@@ -134,7 +135,8 @@ def _test_xgboost(method='BlendSearch'):
                     # You can add "gpu": 0.1 to allocate GPUs
                     resources_per_trial={"cpu": 1},
                     config=search_space, local_dir='logs/',
-                    num_samples=num_samples*n_cpu, time_budget_s=time_budget_s,
+                    num_samples=num_samples * n_cpu,
+                    time_budget_s=time_budget_s,
                     scheduler=scheduler, search_alg=algo)
             ray.shutdown()
             # # Load the best model checkpoint
@@ -142,7 +144,7 @@ def _test_xgboost(method='BlendSearch'):
             # best_bst = xgb.Booster()
             # best_bst.load_model(os.path.join(analysis.best_checkpoint,
             #  "model.xgb"))
-            best_trial = analysis.get_best_trial("eval-logloss","min","all")
+            best_trial = analysis.get_best_trial("eval-logloss", "min", "all")
             accuracy = 1. - best_trial.metric_analysis["eval-error"]["min"]
             logloss = best_trial.metric_analysis["eval-logloss"]["min"]
             logger.info(f"method={method}")
@@ -164,20 +166,27 @@ def test_nested():
     }
 
     def simple_func(config):
-        tune.report(
-            metric=(config["cost_related"]["a"]-4)**2 * (config["b"]-0.7)**2)
+        obj = (config["cost_related"]["a"] - 4)**2 \
+            + (config["b"] - config["cost_related"]["a"])**2
+        tune.report(obj=obj)
+        tune.report(obj=obj, ab=config["cost_related"]["a"] * config["b"])
 
     analysis = tune.run(
         simple_func,
-        init_config={
-            "cost_related": {"a": 1,}
-        },
-        metric="metric",
-        mode="min",
         config=search_space,
+        low_cost_partial_config={
+            "cost_related": {"a": 1}
+        },
+        metric="obj",
+        mode="min",
+        metric_constraints=[("ab", "<=", 4)],
         local_dir='logs/',
         num_samples=-1,
         time_budget_s=1)
+
+    best_trial = analysis.get_best_trial()
+    logger.info(f"Best config: {best_trial.config}")
+    logger.info(f"Best result: {best_trial.last_result}")
 
 
 def test_xgboost_bs():
@@ -225,4 +234,4 @@ def _test_xgboost_bohb():
 
 
 if __name__ == "__main__":
-    unittest.main()
+    test_xgboost_bs()

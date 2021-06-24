@@ -40,6 +40,7 @@ setuptools.setup(
             "jupyter",
             "matplotlib==3.2.0",
             "rgf-python",
+            "vowpalwabbit",
         ],
         "test": [
             "flake8>=3.8.4",
@@ -48,25 +49,41 @@ setuptools.setup(
             "xgboost<1.3",
             "rgf-python",
             "optuna==2.3.0",
+            "vowpalwabbit",
+            "openml",
+            "transformers==4.4.1",
+            "wandb==0.10.26",
+            "torch==1.8.1",
+            "datasets==1.4.1",
+            "azure-storage-blob"
         ],
         "blendsearch": [
             "optuna==2.3.0"
         ],
         "ray": [
-            "ray[tune]==1.1.0",
-            "pyyaml<5.3.1",            
+            "ray[tune]==1.2.0",
+            "pyyaml<5.3.1",
         ],
         "azureml": [
             "azureml-mlflow",
         ],
         "nni": [
             "nni",
+        ],
+        "vw": [
+            "vowpalwabbit",
+        ],
+        "nlp": [
+            "ray[tune]>=1.2.0",
+            "transformers",
+            "datasets==1.4.1",
+            "torch"
         ]
     },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",        
+        "Operating System :: OS Independent",
     ],
     python_requires=">=3.6",
 )

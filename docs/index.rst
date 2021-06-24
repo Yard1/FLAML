@@ -22,7 +22,7 @@ AutoML
 
 
 Tune
-------
+----
 
 .. autofunction:: flaml.tune.run
 
@@ -35,6 +35,26 @@ Tune
    :members:
 
 .. autoclass:: flaml.FLOW2
+   :members:
+
+
+Online AutoML
+-------------
+
+.. autoclass:: flaml.AutoVW
+   :members:
+
+
+NLP
+---
+
+.. autoclass:: flaml.nlp.AutoTransformers
+   :members:
+
+.. autoclass:: flaml.nlp.AzureUtils
+   :members:
+
+.. autoclass:: flaml.nlp.JobID
    :members:
 
 

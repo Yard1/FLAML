@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 This source file is adapted here because ray does not fully support Windows.
+
+Copyright (c) Microsoft Corporation.
 '''
 import copy
 import glob
@@ -21,6 +23,11 @@ import logging
 import os
 import time
 from typing import Dict, Optional, Union, List, Tuple
+import pickle
+from .variant_generator import parse_spec_vars
+from ..tune.sample import Categorical, Domain, Float, Integer, LogUniform, \
+    Quantized, Uniform
+from ..tune.trial import flatten_dict, unflatten_dict
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +79,7 @@ def log_once(key):
         return False
     else:
         return False
-        
+
 
 class Searcher:
     """Abstract class for wrapping suggesting algorithms.
@@ -407,12 +414,6 @@ class ConcurrencyLimiter(Searcher):
         return self.searcher.set_search_properties(metric, mode, config)
 
 
-import pickle
-from .variant_generator import parse_spec_vars
-from ..tune.sample import Categorical, Domain, Float, Integer, LogUniform, \
-    Quantized, Uniform
-from ..tune.trial import flatten_dict, unflatten_dict
-
 try:
     import optuna as ot
     from optuna.samplers import BaseSampler
@@ -469,6 +470,7 @@ class OptunaSearch(Searcher):
             configurations.
         sampler (optuna.samplers.BaseSampler): Optuna sampler used to
             draw hyperparameter configurations. Defaults to ``TPESampler``.
+        seed (int): The random seed for the sampler
     Tune automatically converts search spaces to Optuna's format:
     .. code-block:: python
         from ray.tune.suggest.optuna import OptunaSearch
@@ -501,7 +503,8 @@ class OptunaSearch(Searcher):
                  metric: Optional[str] = None,
                  mode: Optional[str] = None,
                  points_to_evaluate: Optional[List[Dict]] = None,
-                 sampler: Optional[BaseSampler] = None):
+                 sampler: Optional[BaseSampler] = None,
+                 seed: Optional[int] = None):
         assert ot is not None, (
             "Optuna must be installed! Run `pip install optuna`.")
         super(OptunaSearch, self).__init__(
@@ -523,7 +526,7 @@ class OptunaSearch(Searcher):
         self._points_to_evaluate = points_to_evaluate
 
         self._study_name = "optuna"  # Fixed study name for in-memory storage
-        self._sampler = sampler or ot.samplers.TPESampler()
+        self._sampler = sampler or ot.samplers.TPESampler(seed=seed)
         assert isinstance(self._sampler, BaseSampler), \
             "You can only pass an instance of `optuna.samplers.BaseSampler` " \
             "as a sampler to `OptunaSearcher`."
