@@ -124,7 +124,8 @@ def run(training_function,
             List[Tuple[Callable[[dict], float], str, float]]] = None,
         metric_constraints: Optional[
             List[Tuple[str, str, float]]] = None,
-        use_ray: Optional[bool] = False):
+        use_ray: Optional[bool] = False,
+        n_total_pu=4):
     '''The trigger for HPO.
 
     Example:
@@ -278,7 +279,7 @@ def run(training_function,
             reduction_factor=reduction_factor,
             config_constraints=config_constraints,
             metric_constraints=metric_constraints)
-    search_alg = ConcurrencyLimiter(search_alg, max_concurrent=64)
+    search_alg = ConcurrencyLimiter(search_alg, max_concurrent=n_total_pu)
     if time_budget_s:
         search_alg.set_search_properties(metric, mode, config={
             'time_budget_s': time_budget_s})

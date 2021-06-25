@@ -1964,7 +1964,8 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
         search_alg=search_alg,
         num_samples=-1,
         time_budget_s=time_budget_s,
-        use_ray=True)
+        use_ray=True,
+        n_total_pu=n_total_pu)
 
     metric = 'loss'
     mode = 'min'
@@ -1975,6 +1976,11 @@ def _test_problem_parallel(problem, time_budget_s=120, n_total_pu=4,
     logger.info(f"time={time.time()-start_time}")
     logger.info(f"Best model eval loss: {loss:.4f}")
     logger.info(f"Best model parameters: {best_trial.config}")
+    print(f"method={method}")
+    print(f"dataset={oml_dataset}")
+    print(f"time={time.time()-start_time}")
+    print(f"Best model eval loss: {loss:.4f}")
+    print(f"Best model parameters: {best_trial.config}", flush=True)
 
 
 if __name__ == "__main__":
